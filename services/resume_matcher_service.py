@@ -10,7 +10,7 @@ class ResumeMatcherService():
         self.skills_data = self._load_json(skills_path)
         self.experience_data = self._load_json(experience_path)
 
-    def load_skills(self, path):
+    def _load_json(self, path):
         try:
             with open(path, "r") as f:
                 return json.load(f)
@@ -25,7 +25,7 @@ class ResumeMatcherService():
         # 1. token.lemma_: This gets the root word (e.g "running" becomes "run").
         # 2. token.pos_: in ["NOUN", "PROPN"], it only keeps proper nouns
         # 3. { ... }: This puts them in a SET, which automatically removes duplicates.
-        keywords = {token.lemma for token in doc if token.pos_ in ["NOUN", "PROPN"]}
+        keywords = {token.lemma_ for token in doc if token.pos_ in ["NOUN", "PROPN"]}
         return keywords
     
     def match_skills(self, jd_text):
@@ -33,7 +33,7 @@ class ResumeMatcherService():
         matched_skills = {}
 
         for category, skill_list in self.skills_data.items():
-            matches = [skill for skill in skill_list if skill_list.lower() in jd_keywords]
+            matches = [skill for skill in skill_list if skill.lower() in jd_keywords]
             if matches:
                 matched_skills[category] = matches
 
@@ -70,5 +70,5 @@ if __name__ == "__main__":
     if found_projects:
         print("Matched Relevant Projects to highlight: ")
         for p in found_projects:
-            print(f"- {p['title']} (stackL {", ".join(p['stack'])})")
+            print(f"- {p['title']} (stack: {", ".join(p['stack'])})")
 
