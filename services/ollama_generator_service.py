@@ -9,20 +9,30 @@ class OllamaGeneratorService():
         self.is_ready = self._check_model_status()
 
     def _check_model_status(self):
+        """Verifies if the model is available. Returns True or False."""
         try:
-            local_models = ollama.list()
-            
-            exists = any(m['name'].startswith(self.model_name) for m in local_models['models'])
+            # 1. Get the response from Ollama
+            response = ollama.list()
 
-            if exists:
-                logger.info(f"Model: {self.model_name} found and ready. ")
-                return True
-            else:
-                logger.warning(f"Warning: '{self.model_name} not found. Run 'ollama pull {self.model_name}'")
+            # 2. Extract the list of models
+            models_list = response.models if hasattr(response, 'models') else []
+
+            if not models_list:
+                logger.warning(f"No models found in Ollama. Pull it using: ollama pull {self.model_name}")
                 return False
 
-        except Exception:
-            logger.warning(f'Error: Ollama is not running, Please start the Ollama application')
+            # 3. Check for the model name using the '.model' attribute
+            for m in models_list:
+                # Based on your log, the attribute is called 'model' (e.g., m.model)
+                if m.model.startswith(self.model_name):
+                    logger.info(f"Ollama model {self.model_name} is ready.")
+                    return True
+            
+            logger.warning(f"Model '{self.model_name}' not found in your local list.")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Could not connect to Ollama: {e}")
             return False
 
     def generator_latex_bullets(self, project_title, project_details, matched_skills):
