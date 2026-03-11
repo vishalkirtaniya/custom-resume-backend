@@ -2,80 +2,131 @@
 
 % --- Packages ---
 \usepackage[T1]{fontenc}
-\usepackage[margin=0.5in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.6in]{geometry}
 \usepackage{enumitem}
 \usepackage{hyperref}
 \usepackage{titlesec}
 \usepackage{xcolor}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+\usepackage[default]{sourcesanspro}
+
+% --- Colors ---
+\definecolor{primary}{HTML}{2E3440}
+\definecolor{accent}{HTML}{4C566A}
+\definecolor{link}{HTML}{5E81AC}
 
 % --- Custom Formatting ---
 \pagestyle{empty}
-\setlist[itemize]{noitemsep, topsep=0pt, leftmargin=1.2em}
+\setlist[itemize]{noitemsep, topsep=2pt, leftmargin=1.2em, labelsep=0.5em}
+\hypersetup{colorlinks=true, linkcolor=link, urlcolor=link}
 
-\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
-\titlespacing*{\section}{0pt}{10pt}{6pt}
+\titleformat{\section}{\large\bfseries\color{primary}\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{12pt}{8pt}
 
 \begin{document}
 
-% --- Header (Constant) ---
+% ── Header ────────────────────────────────────────────────────────────────────
 \begin{center}
-    {\Huge \textbf{Vishal Aditya Kirtaniya}} \\ \vspace{4pt}
+    {\Huge \textbf{\color{primary} (( profile.full_name ))}} \\ \vspace{6pt}
     \small
-    Mumbai, India $|$ +91 8839054275 \\
-    \href{mailto:vishalkirtaniyaofficial@gmail.com}{vishalkirtaniyaofficial@gmail.com} [cite: 3] \\
-    \href{https://linkedin.com/in/vishalkirtaniya}{linkedin.com/in/vishalkirtaniya} $|$
-    \href{https://github.com/vishalkirtaniya}{github.com/vishalkirtaniya} [cite: 3]
+    ((* if profile.location *))
+    \faMapMarker* \hspace{1pt} (( profile.location )) \quad
+    ((* endif *))
+    ((* if profile.phone *))
+    \faPhone* \hspace{1pt} (( profile.phone )) \quad
+    ((* endif *))
+    ((* if profile.email *))
+    \faEnvelope \hspace{1pt} \href{mailto:(( profile.email ))}{(( profile.email ))}
+    ((* endif *))
+    \\ \vspace{3pt}
+    ((* if profile.linkedin_url *))
+    \faLinkedin \hspace{1pt} \href{(( profile.linkedin_url ))}{(( profile.linkedin_url | replace("https://", "") ))} \quad
+    ((* endif *))
+    ((* if profile.github_url *))
+    \faGithub \hspace{1pt} \href{(( profile.github_url ))}{(( profile.github_url | replace("https://", "") ))}
+    ((* endif *))
+    ((* if profile.website_url *))
+    \quad \faGlobe \hspace{1pt} \href{(( profile.website_url ))}{(( profile.website_url | replace("https://", "") ))}
+    ((* endif *))
 \end{center}
 
-% --- Summary (Constant) ---
+% ── Summary ───────────────────────────────────────────────────────────────────
+((* if profile.summary *))
 \section*{Summary}
-Junior Software Engineer skilled in full stack development, real-time data pipelines, 
-API design, and system optimization[cite: 5]. Experienced with Python, Node.js, and Next.js, 
-applying strong OOP and debugging skills to build scalable, secure, and high-performance applications[cite: 6].
+{\color{accent}
+(( profile.summary ))}
+((* endif *))
 
-% --- Skills (Dynamic Matched Skills) ---
-\section*{Skills}
-\begin{itemize}[label={}]
-    \item \textbf{Languages:} (( skills.Languages | join(', ') ))
-    ((* if skills.Backend *)) \item \textbf{Backend:} (( skills.Backend | join(', ') )) ((* endif *))
-    ((* if skills.Frontend *)) \item \textbf{Frontend:} (( skills.Frontend | join(', ') )) ((* endif *))
-    \item \textbf{Databases:} MongoDB, MySQL, PostgreSQL
-    \item \textbf{Tools:} Git, Docker, Postman, Linux (Ubuntu), NPM
-\end{itemize}
+% ── Technical Skills ──────────────────────────────────────────────────────────
+((* if skills *))
+\section*{Technical Skills}
+\begin{description}[font=\bfseries, style=multiline, leftmargin=6.5em]
+((* for category, skill_list in skills.items() *))
+    \item[(( category ))] (( skill_list | join(", ") ))
+((* endfor *))
+\end{description}
+((* endif *))
 
-% --- Experience (Constant Work Experience) ---
+% ── Work Experience ───────────────────────────────────────────────────────────
+((* if experience *))
 \section*{Work Experience}
 
-\textbf{Software Engineer I} $|$ Totality Corp \hfill Apr 2025 -- Feb 2026 [cite: 8, 9]
+((* for exp in experience *))
+\noindent
+\textbf{(( exp.company ))} \hfill \textbf{(( exp.start_date )) -- (( exp.end_date ))} \\
+\textit{(( exp.role ))}((* if exp.location *)) \hfill (( exp.location ))((* endif *))
+((* if exp.highlights *))
 \begin{itemize}
-    \item Built a technical analysis trading system with custom strategies delivering \textbf{20\% returns}[cite: 10].
-    \item Developed APIs for an AI-powered golf assistant app, improving prediction accuracy by \textbf{30\%}[cite: 11].
-    \item Designed real-time ingestion pipelines integrating Dhan APIs with \textbf{100\% uptime}[cite: 12].
-    \item Worked as a Full Stack Developer across \textbf{4+ production projects} including Greenr, Swift Alpha, Jupito, and Swingo[cite: 13].
-\end{itemize}
-
-\vspace{4pt}
-\textbf{Frontend Developer Intern} $|$ Totality Corp \hfill Oct 2024 -- Mar 2025 [cite: 14, 15]
-\begin{itemize}
-    \item Built responsive dashboards for \textbf{multiple internal projects} using React and Next.js[cite: 17].
-    \item Created reusable UI components and layouts, accelerating feature development by \textbf{25\%}.
-    \item Implemented REST APIs and collaborated closely with backend engineers[cite: 19].
-    \item Wrote and executed \textbf{50+ API test cases} using Postman[cite: 20].
-\end{itemize}
-
-% --- Technical Projects (Dynamic Loop) ---
-\section*{Technical Projects}
-((* for project in projects *))
-\textbf{(( project.title ))} \\
-\begin{itemize}
-    (( project.bullets )) 
-\end{itemize}
-\vspace{4pt}
+((* for point in exp.highlights *))
+    \item (( point ))
 ((* endfor *))
+\end{itemize}
+((* endif *))
+((* if not loop.last *))
+\vspace{6pt}
+((* endif *))
+((* endfor *))
+((* endif *))
 
-% --- Education (Constant) ---
+% ── Technical Projects ────────────────────────────────────────────────────────
+((* if projects *))
+\section*{Technical Projects}
+
+((* for project in projects *))
+\noindent
+\textbf{(( project.title ))}((* if project.stack *)) \hfill \textit{(( project.stack | join(", ") ))}((* endif *))
+\begin{itemize}
+((* if project.bullets *))
+(( project.bullets ))
+((* elif project.description or project.metrics *))
+((* if project.description *))
+    \item (( project.description ))
+((* endif *))
+((* for m in project.metrics or [] *))
+    \item (( m ))
+((* endfor *))
+((* endif *))
+\end{itemize}
+((* if not loop.last *))
+\vspace{4pt}
+((* endif *))
+((* endfor *))
+((* endif *))
+
+% ── Education ─────────────────────────────────────────────────────────────────
+((* if education *))
 \section*{Education}
-\textbf{BCA} $|$ Lovely Professional University (Online) \hfill May 2025 [cite: 55, 57] \\
-\textbf{Senior Secondary (PCBM)} $|$ Kendriya Vidyalaya, Satna [cite: 56]
+\begin{tabularx}{\textwidth}{Xr}
+((* for edu in education *))
+    \textbf{(( edu.institution ))} & \textbf{(( edu.graduation_year ))} \\
+    ((* if edu.degree *))
+    (( edu.degree ))((* if edu.field_of_study *)) --- (( edu.field_of_study ))((* endif *)) & ((* if edu.status *)) \textit{(( edu.status ))} ((* endif *)) \\
+    ((* endif *))
+    ((* if not loop.last *))\vspace{2pt} \\((* endif *))
+((* endfor *))
+\end{tabularx}
+((* endif *))
 
 \end{document}
