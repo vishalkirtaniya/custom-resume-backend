@@ -30,7 +30,18 @@ class LatexBuilderService:
 
         try:
             template = self.env.get_template(self.template_name)
-            
+
+
+            formatted_skills = []
+            skills_dict = resume_data.get('skills_to_list', {})
+            for category, items in skills_dict.items():
+                # Join list of skills into a comma-separated string
+                skills_str = ", ".join(items) if isinstance(items, list) else items
+                formatted_skills.append({
+                    "category": category,
+                    "content": skills_str
+                })
+                
             # 2. Fallback Logic: Prepare Project Data
             final_projects = []
             for project in resume_data.get('project_bullets', []):
@@ -111,3 +122,39 @@ class LatexBuilderService:
             if any(file.endswith(ext) for ext in extensions):
                 os.remove(os.path.join(directory, file))
         logger.info("Temporary LaTeX files cleaned up.")
+
+    def render_as_string(self, resume_data: dict, user_data: dict) -> str:
+        """
+        Renders the LaTeX template as a string using all user data from the DB.
+
+        Args:
+            resume_data: { skills_to_list: {...}, project_bullets: [...] }
+                         — output from the matcher + generator pipeline
+            user_data:   full dict from SupabaseService.get_full_profile()
+                         { profile: {...}, experience: [...], education: [...], ... }
+        """
+        template = self.env.get_template(self.template_name)
+
+        # Format project bullets: merge AI-generated bullets into project rows
+        # so the template has one unified `projects` list to loop over
+        project_bullets_map = {
+            p["title"]: p.get("bullets", "")
+            for p in resume_data.get("project_bullets", [])
+        }
+
+        projects_with_bullets = []
+        for p in user_data.get("projects", []):
+            projects_with_bullets.append({
+                **p,
+                # Attach AI bullets if generated for this project; else fall back
+                # to description/metrics so the section is never empty
+                "bullets": project_bullets_map.get(p["title"], ""),
+            })
+
+        return template.render(
+            profile    = user_data.get("profile", {}),
+            skills     = resume_data.get("skills_to_list", {}),
+            experience = user_data.get("experience", []),
+            projects   = projects_with_bullets,
+            education  = user_data.get("education", []),
+        )
