@@ -10,6 +10,7 @@ from services.supabase_service import SupabaseService
 from services.resume_matcher_service import ResumeMatcherService
 from services.ollama_generator_service import OllamaGeneratorService
 from services.latex_builder_service import LatexBuilderService
+from utils.cache import cache
 
 # All new routes (auth, profile, experience, skills, etc.)
 from routes import router
@@ -54,11 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount all routes from routes.py (/auth/register, /auth/login, /profile, etc.)
 app.include_router(router)
-
-# ── Shared auth dependency (used by routes defined IN THIS FILE only) ─────────
-# Note: routes.py has its own copy of this — that is intentional and fine.
 
 async def get_current_user(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -68,8 +65,6 @@ async def get_current_user(authorization: str = Header(None)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user
-
-# ── Existing routes (DO NOT REMOVE) ──────────────────────────────────────────
 
 @app.get("/")
 async def health_check():
@@ -140,6 +135,9 @@ async def sync_profile(data: ProfileSchema, user=Depends(get_current_user)):
                 "start_date": exp.start_date,
                 "end_date": exp.end_date,
             }).execute()
+        
+        cache.invalidate(user.id, "profile")
+        cache.invalidate(user.id, "experience")
 
         return {"status": "success", "message": "Profile and Experience synced to Supabase"}
 

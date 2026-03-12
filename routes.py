@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from services.supabase_service import SupabaseService
+from utils.cache import cache
 
 router = APIRouter()
 
@@ -127,6 +128,7 @@ async def update_profile(data: ProfileUpdateSchema, user=Depends(get_current_use
     try:
         client = SupabaseService.get_client()
         client.table("profiles").update(payload).eq("id", user.id).execute()
+        cache.invalidate(user.id, "profile")
         return {"status": "success", "updated_fields": list(payload.keys())}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -135,9 +137,17 @@ async def update_profile(data: ProfileUpdateSchema, user=Depends(get_current_use
 @router.get("/profile")
 async def get_profile(user=Depends(get_current_user)):
     """Returns the current user's full profiles row."""
+    cached = cache.get(user.id, "profile")
+    if cached is not None:
+        return {
+            "status": "success",
+            "profile": cached,
+            "cached": True
+        }
     try:
         client = SupabaseService.get_client()
         result = client.table("profiles").select("*").eq("id", user.id).single().execute()
+        cache.set(user.id, "profile", result.data)
         return {"status": "success", "profile": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -160,9 +170,17 @@ class ExperienceItemSchema(BaseModel):
 
 @router.get("/profile/experience")
 async def get_experience(user=Depends(get_current_user)):
+    cached = cache.get(user.id, "experience")
+    if cached is not None:
+        return {
+            "status": "success",
+            "items": cached,
+            "cached": True
+        }
     try:
         client = SupabaseService.get_client()
         result = client.table("experience").select("*").eq("user_id", user.id).execute()
+        cache.set(user.id, "experience", result.data)
         return {"status": "success", "items": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -176,6 +194,7 @@ async def sync_experience(items: List[ExperienceItemSchema], user=Depends(get_cu
         if items:
             rows = [{"user_id": user.id, **item.model_dump()} for item in items]
             client.table("experience").insert(rows).execute()
+        cache.invalidate(user.id, "experience")
         return {"status": "success", "count": len(items)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -194,9 +213,17 @@ class EducationItemSchema(BaseModel):
 
 @router.get("/profile/education")
 async def get_education(user=Depends(get_current_user)):
+    cached = cache.get(user.id, "education")
+    if cached is not None:
+        return {
+            "status": "success",
+            "items": cached,
+            "cached": True
+        }
     try:
         client = SupabaseService.get_client()
         result = client.table("education").select("*").eq("user_id", user.id).execute()
+        cache.set(user.id, "education", result.data)
         return {"status": "success", "items": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -210,6 +237,7 @@ async def sync_education(items: List[EducationItemSchema], user=Depends(get_curr
         if items:
             rows = [{"user_id": user.id, **item.model_dump()} for item in items]
             client.table("education").insert(rows).execute()
+        cache.invalidate(user.id, "education")
         return {"status": "success", "count": len(items)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -225,9 +253,13 @@ class SkillItemSchema(BaseModel):
 
 @router.get("/profile/skills")
 async def get_skills(user=Depends(get_current_user)):
+    cached = cache.get(user.id, "skills")
+    if cached is not None:
+        return {"status": "success", "items": cached, "cached": True}
     try:
         client = SupabaseService.get_client()
         result = client.table("skills").select("*").eq("user_id", user.id).execute()
+        cache.set(user.id, "skills", result.data)
         return {"status": "success", "items": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -241,6 +273,8 @@ async def sync_skills(items: List[SkillItemSchema], user=Depends(get_current_use
         if items:
             rows = [{"user_id": user.id, **item.model_dump()} for item in items]
             client.table("skills").insert(rows).execute()
+
+        cache.invalidate(user.id, "skills")
         return {"status": "success", "count": len(items)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -259,9 +293,17 @@ class ProjectItemSchema(BaseModel):
 
 @router.get("/profile/projects")
 async def get_projects(user=Depends(get_current_user)):
+    cached = cache.get(user.id, "projects")
+    if cached is not None:
+        return {
+            "status": "success",
+            "items": cached,
+            "cached": True
+        }
     try:
         client = SupabaseService.get_client()
         result = client.table("projects").select("*").eq("user_id", user.id).execute()
+        cache.set(user.id, "projects", result.data)
         return {"status": "success", "items": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -275,6 +317,7 @@ async def sync_projects(items: List[ProjectItemSchema], user=Depends(get_current
         if items:
             rows = [{"user_id": user.id, **item.model_dump()} for item in items]
             client.table("projects").insert(rows).execute()
+        cache.invalidate(user.id, "projects")
         return {"status": "success", "count": len(items)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -294,9 +337,17 @@ class CertificationItemSchema(BaseModel):
 
 @router.get("/profile/certifications")
 async def get_certifications(user=Depends(get_current_user)):
+    cached = cache.get(user.id, "certifications")
+    if cached is not None:
+        return {
+            "status": "success",
+            "items": cached,
+            "cached": True
+        }
     try:
         client = SupabaseService.get_client()
         result = client.table("certifications").select("*").eq("user_id", user.id).execute()
+        cache.set(user.id, "certifications", result.data)
         return {"status": "success", "items": result.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -310,6 +361,7 @@ async def sync_certifications(items: List[CertificationItemSchema], user=Depends
         if items:
             rows = [{"user_id": user.id, **item.model_dump()} for item in items]
             client.table("certifications").insert(rows).execute()
+        cache.invalidate(user.id, "certifications")
         return {"status": "success", "count": len(items)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
