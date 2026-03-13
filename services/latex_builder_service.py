@@ -3,20 +3,29 @@ from jinja2 import Environment, FileSystemLoader
 from utils.logger import logger
 import subprocess
 import shutil
+import re
 
 class LatexBuilderService:
     def __init__(self, template_dir='templates', template_name='resume_template.tex'):
-        # Configure Jinja2 with unique markers for each type of action
         self.env = Environment(
             loader=FileSystemLoader(template_dir),
-            block_start_string='((*',    # Used for: ((* for project in projects *))
-            block_end_string='*))',      # Used for: ((* endfor *))
-            variable_start_string='((',  # Used for: (( project.title ))
+            block_start_string='((*',
+            block_end_string='*))',
+            variable_start_string='((',
             variable_end_string='))',
-            comment_start_string='((=',  # Unique comment marker
+            comment_start_string='((=',
             comment_end_string='=))'
         )
         self.template_name = template_name
+
+        def bold_metrics(text: str) -> str:
+            return re.sub(
+                r'(\b\d+[\.,]?\d*\s?(?:%|x|ms|s|K|M|hrs?|days?|\+)?\b)',
+                r'\\textbf{\1}',
+                text
+            )
+ 
+        self.env.filters['bold_metrics'] = bold_metrics
 
     def build_tex(self, resume_data, output_path='output/tailored_resume.tex', shutdown_flag=False):
         """
@@ -124,37 +133,31 @@ class LatexBuilderService:
         logger.info("Temporary LaTeX files cleaned up.")
 
     def render_as_string(self, resume_data: dict, user_data: dict) -> str:
-        """
-        Renders the LaTeX template as a string using all user data from the DB.
-
-        Args:
-            resume_data: { skills_to_list: {...}, project_bullets: [...] }
-                         — output from the matcher + generator pipeline
-            user_data:   full dict from SupabaseService.get_full_profile()
-                         { profile: {...}, experience: [...], education: [...], ... }
-        """
         template = self.env.get_template(self.template_name)
-
-        # Format project bullets: merge AI-generated bullets into project rows
-        # so the template has one unified `projects` list to loop over
-        project_bullets_map = {
-            p["title"]: p.get("bullets", "")
+ 
+        project_map = {
+            p["title"]: p
             for p in resume_data.get("project_bullets", [])
         }
-
+ 
         projects_with_bullets = []
         for p in user_data.get("projects", []):
+            matched = project_map.get(p["title"], {})
             projects_with_bullets.append({
                 **p,
-                # Attach AI bullets if generated for this project; else fall back
-                # to description/metrics so the section is never empty
-                "bullets": project_bullets_map.get(p["title"], ""),
+                "bullets": matched.get("bullets", ""),
             })
 
+        raw_skills = user_data.get("skills", {})
+        all_skills = {k.title(): v for k, v in raw_skills.items()}
+ 
         return template.render(
-            profile    = user_data.get("profile", {}),
-            skills     = resume_data.get("skills_to_list", {}),
-            experience = user_data.get("experience", []),
-            projects   = projects_with_bullets,
-            education  = user_data.get("education", []),
+            profile          = user_data.get("profile", {}),
+            all_skills       = all_skills,  # ALL skills from DB
+            skills           = resume_data.get("skills_to_list", {}),  # matched only
+            experience       = user_data.get("experience", []),
+            projects         = projects_with_bullets,
+            education        = user_data.get("education", []),
+            designation      = resume_data.get("designation", ""),
+            tailored_summary = resume_data.get("tailored_summary", ""),
         )

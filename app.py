@@ -8,9 +8,10 @@ from typing import List, Optional
 # Services
 from services.supabase_service import SupabaseService
 from services.resume_matcher_service import ResumeMatcherService
-from services.ollama_generator_service import OllamaGeneratorService
+from services.cloud_generator_service import GroqGeneratorService
 from services.latex_builder_service import LatexBuilderService
 from utils.cache import cache
+from utils.logger import logger
 
 # All new routes (auth, profile, experience, skills, etc.)
 from routes import router
@@ -79,33 +80,58 @@ async def generate_resume(request: ResumeRequest, user=Depends(get_current_user)
     try:
         db = SupabaseService(user_id=user.id)
         user_data = db.get_full_profile()
-
-        matcher = ResumeMatcherService(user_data=user_data)
-        generator = OllamaGeneratorService()
-        builder = LatexBuilderService()
-
-        matched_skills = matcher.match_skills(request.job_description)
-        print(f"Matched_skills: {matched_skills}")
+ 
+        matcher   = ResumeMatcherService(user_data=user_data)
+        generator = GroqGeneratorService()
+        builder   = LatexBuilderService()
+ 
+        matched_skills    = matcher.match_skills(request.job_description)
         relevant_projects = matcher.match_experience(matched_skills)
-
+ 
+        designation = generator.extract_designation(request.job_description)
+ 
+        tailored_summary = generator.generate_summary(
+            original_summary = user_data.get("profile", {}).get("summary", ""),
+            job_description  = request.job_description,
+            experience       = user_data.get("experience", []),
+        )
+ 
         final_projects_data = []
         for project in relevant_projects:
-            bullets = generator.generator_latex_bullets(
-                project_title=project["title"],
-                project_details=project.get("description", ""),
-                matched_skills=matched_skills.get("Backend", []) + matched_skills.get("Languages", []),
+            # Extract keywords first so they can be woven into bullets
+            keywords = generator.extract_project_keywords(
+                project_title   = project["title"],
+                project_details = project.get("description", ""),
+                job_description = request.job_description,
             )
-            final_projects_data.append({"title": project["title"], "bullets": bullets})
-
+            # Pass keywords into bullets so they appear naturally in the text
+            bullets = generator.generator_latex_bullets(
+                project_title   = project["title"],
+                project_details = project.get("description", ""),
+                matched_skills  = matched_skills.get("Backend", []) + matched_skills.get("Languages", []),
+                keywords        = keywords,
+            )
+            final_projects_data.append({
+                "title":   project["title"],
+                "bullets": bullets,
+            })
+ 
         final_resume_payload = {
-            "skills_to_list": matched_skills,
-            "project_bullets": final_projects_data,
+            "skills_to_list":   matched_skills,
+            "project_bullets":  final_projects_data,
+            "designation":      designation,
+            "tailored_summary": tailored_summary,
         }
-
+ 
         tex_code = builder.render_as_string(final_resume_payload, user_data)
-
-        return {"status": "success", "tex": tex_code, "matched_skills": matched_skills}
-
+ 
+        return {
+            "status":         "success",
+            "tex":            tex_code,
+            "matched_skills": matched_skills,
+            "designation":    designation,
+        }
+ 
     except Exception as e:
         print(f"Error during generation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
