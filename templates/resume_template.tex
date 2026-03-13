@@ -3,7 +3,7 @@
 % --- Packages ---
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.6in]{geometry}
+\usepackage[top=0.45in, bottom=0.45in, left=0.5in, right=0.5in]{geometry}
 \usepackage{enumitem}
 \usepackage{hyperref}
 \usepackage{titlesec}
@@ -19,52 +19,47 @@
 
 % --- Custom Formatting ---
 \pagestyle{empty}
-\setlist[itemize]{noitemsep, topsep=2pt, leftmargin=1.2em, labelsep=0.5em}
+\setlist[itemize]{noitemsep, topsep=1pt, leftmargin=1.1em, labelsep=0.4em}
 \hypersetup{colorlinks=true, linkcolor=link, urlcolor=link}
 
-\titleformat{\section}{\large\bfseries\color{primary}\uppercase}{}{0em}{}[\titlerule]
-\titlespacing*{\section}{0pt}{12pt}{8pt}
+\titleformat{\section}{\normalsize\bfseries\color{primary}\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{6pt}
+
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
 
 \begin{document}
 
 % ── Header ────────────────────────────────────────────────────────────────────
+% Name and designation on ONE line, all contacts on ONE line below.
+% We build both lines as single unbroken strings — no Jinja block-per-line.
 \begin{center}
-    {\Huge \textbf{\color{primary} (( profile.full_name ))}} \\ \vspace{6pt}
-    \small
-    ((* if profile.location *))
-    \faMapMarker* \hspace{1pt} (( profile.location )) \quad
-    ((* endif *))
-    ((* if profile.phone *))
-    \faPhone* \hspace{1pt} (( profile.phone )) \quad
-    ((* endif *))
-    ((* if profile.email *))
-    \faEnvelope \hspace{1pt} \href{mailto:(( profile.email ))}{(( profile.email ))}
-    ((* endif *))
-    \\ \vspace{3pt}
-    ((* if profile.linkedin_url *))
-    \faLinkedin \hspace{1pt} \href{(( profile.linkedin_url ))}{(( profile.linkedin_url | replace("https://", "") ))} \quad
-    ((* endif *))
-    ((* if profile.github_url *))
-    \faGithub \hspace{1pt} \href{(( profile.github_url ))}{(( profile.github_url | replace("https://", "") ))}
-    ((* endif *))
-    ((* if profile.website_url *))
-    \quad \faGlobe \hspace{1pt} \href{(( profile.website_url ))}{(( profile.website_url | replace("https://", "") ))}
-    ((* endif *))
+{\LARGE \textbf{\color{primary} (( profile.full_name ))}}((* if designation *))~~{\small \textcolor{accent}{$|$~~\textbf{(( designation ))}}}((* endif *))\\[3pt]
+\scriptsize
+(( [
+  ("\\faMapMarker*\\hspace{1pt}" ~ profile.location)             if profile.location,
+  ("\\faPhone*\\hspace{1pt}" ~ profile.phone)                    if profile.phone,
+  ("\\faEnvelope\\hspace{1pt}\\href{mailto:" ~ profile.email ~ "}{" ~ profile.email ~ "}") if profile.email,
+  ("\\faLinkedin\\hspace{1pt}\\href{" ~ profile.linkedin_url ~ "}{" ~ (profile.linkedin_url | replace("https://www.","") | replace("https://","")) ~ "}") if profile.linkedin_url,
+  ("\\faGithub\\hspace{1pt}\\href{" ~ profile.github_url ~ "}{" ~ (profile.github_url | replace("https://","")) ~ "}") if profile.github_url,
+  ("\\faGlobe\\hspace{1pt}\\href{" ~ profile.website_url ~ "}{" ~ (profile.website_url | replace("https://","")) ~ "}") if profile.website_url
+] | select | join("~~\\textcolor{accent}{$\\cdot$}~~") ))
 \end{center}
 
+\vspace{-2pt}
+
 % ── Summary ───────────────────────────────────────────────────────────────────
-((* if profile.summary *))
+((* if tailored_summary *))
 \section*{Summary}
-{\color{accent}
-(( profile.summary ))}
+{\small \color{accent} (( tailored_summary ))}
 ((* endif *))
 
-% ── Technical Skills ──────────────────────────────────────────────────────────
-((* if skills *))
+% ── Technical Skills — ALL skills, not just matched ───────────────────────────
+((* if all_skills *))
 \section*{Technical Skills}
-\begin{description}[font=\bfseries, style=multiline, leftmargin=6.5em]
-((* for category, skill_list in skills.items() *))
-    \item[(( category ))] (( skill_list | join(", ") ))
+\begin{description}[font=\bfseries\small, style=multiline, leftmargin=6em, itemsep=0pt]
+((* for category, skill_list in all_skills.items() *))
+    \item[(( category ))] {\small (( skill_list | join(", ") ))}
 ((* endfor *))
 \end{description}
 ((* endif *))
@@ -72,46 +67,41 @@
 % ── Work Experience ───────────────────────────────────────────────────────────
 ((* if experience *))
 \section*{Work Experience}
-
 ((* for exp in experience *))
-\noindent
-\textbf{(( exp.company ))} \hfill \textbf{(( exp.start_date )) -- (( exp.end_date ))} \\
-\textit{(( exp.role ))}((* if exp.location *)) \hfill (( exp.location ))((* endif *))
+\noindent{\small \textbf{(( exp.company ))}} \hfill {\small \textbf{(( exp.start_date )) -- (( exp.end_date ))}}\\
+{\small \textit{(( exp.role ))}}((* if exp.location *)) \hfill {\small (( exp.location ))}((* endif *))
 ((* if exp.highlights *))
-\begin{itemize}
+\begin{itemize}[topsep=2pt]
 ((* for point in exp.highlights *))
-    \item (( point ))
+    \item {\small (( point | bold_metrics ))}
 ((* endfor *))
 \end{itemize}
 ((* endif *))
-((* if not loop.last *))
-\vspace{6pt}
-((* endif *))
+((* if not loop.last *))\vspace{3pt}((* endif *))
 ((* endfor *))
 ((* endif *))
 
-% ── Technical Projects ────────────────────────────────────────────────────────
+% ── Technical Projects — relevant first, keywords woven into bullets ───────────
 ((* if projects *))
 \section*{Technical Projects}
-
-((* for project in projects *))
-\noindent
-\textbf{(( project.title ))}((* if project.stack *)) \hfill \textit{(( project.stack | join(", ") ))}((* endif *))
-\begin{itemize}
+((* set relevant = projects | selectattr("bullets") | list *))
+((* set others   = projects | rejectattr("bullets") | list *))
+((* set ordered  = relevant + others *))
+((* for project in ordered *))
+\noindent{\small \textbf{(( project.title ))}}((* if project.stack *)) \hfill {\small \textit{(( project.stack | join(", ") ))}}((* endif *))
+\begin{itemize}[topsep=2pt]
 ((* if project.bullets *))
 (( project.bullets ))
 ((* elif project.description or project.metrics *))
 ((* if project.description *))
-    \item (( project.description ))
+    \item {\small (( project.description ))}
 ((* endif *))
 ((* for m in project.metrics or [] *))
-    \item (( m ))
+    \item {\small (( m ))}
 ((* endfor *))
 ((* endif *))
 \end{itemize}
-((* if not loop.last *))
-\vspace{4pt}
-((* endif *))
+((* if not loop.last *))\vspace{2pt}((* endif *))
 ((* endfor *))
 ((* endif *))
 
@@ -120,11 +110,9 @@
 \section*{Education}
 \begin{tabularx}{\textwidth}{Xr}
 ((* for edu in education *))
-    \textbf{(( edu.institution ))} & \textbf{(( edu.graduation_year ))} \\
-    ((* if edu.degree *))
-    (( edu.degree ))((* if edu.field_of_study *)) --- (( edu.field_of_study ))((* endif *)) & ((* if edu.status *)) \textit{(( edu.status ))} ((* endif *)) \\
-    ((* endif *))
-    ((* if not loop.last *))\vspace{2pt} \\((* endif *))
+    {\small \textbf{(( edu.institution ))}} & {\small \textbf{(( edu.graduation_year ))}} \\
+    ((* if edu.degree *)){\small (( edu.degree ))((* if edu.field_of_study *)) --- (( edu.field_of_study ))((* endif *))} & {\small ((* if edu.status *)) \textit{(( edu.status ))} ((* endif *))} \\((* endif *))
+    ((* if not loop.last *))\vspace{1pt} \\((* endif *))
 ((* endfor *))
 \end{tabularx}
 ((* endif *))
