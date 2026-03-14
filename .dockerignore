@@ -1,0 +1,51 @@
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+app.log
+
+# Dev & editor tools
+.vscode/
+.idea/
+.qodo/
+todo.txt
+README.md
+
+# Git
+.git/
+.gitignore
+
+# Python project metadata
+pyproject.toml
+uv.lock
+.python-version
+
+# Test suites
+test_suite_analysis/
+
+# Build artifacts
+output/
+dist/
+build/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+services/ollama_generator_service.py

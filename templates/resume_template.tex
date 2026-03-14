@@ -8,9 +8,7 @@
 \usepackage{hyperref}
 \usepackage{titlesec}
 \usepackage{xcolor}
-\usepackage{fontawesome5}
 \usepackage{tabularx}
-\usepackage[default]{sourcesanspro}
 
 % --- Colors ---
 \definecolor{primary}{HTML}{2E3440}
@@ -31,18 +29,16 @@
 \begin{document}
 
 % ── Header ────────────────────────────────────────────────────────────────────
-% Name and designation on ONE line, all contacts on ONE line below.
-% We build both lines as single unbroken strings — no Jinja block-per-line.
 \begin{center}
 {\LARGE \textbf{\color{primary} (( profile.full_name ))}}((* if designation *))~~{\small \textcolor{accent}{$|$~~\textbf{(( designation ))}}}((* endif *))\\[3pt]
 \scriptsize
 (( [
-  ("\\faMapMarker*\\hspace{1pt}" ~ profile.location)             if profile.location,
-  ("\\faPhone*\\hspace{1pt}" ~ profile.phone)                    if profile.phone,
-  ("\\faEnvelope\\hspace{1pt}\\href{mailto:" ~ profile.email ~ "}{" ~ profile.email ~ "}") if profile.email,
-  ("\\faLinkedin\\hspace{1pt}\\href{" ~ profile.linkedin_url ~ "}{" ~ (profile.linkedin_url | replace("https://www.","") | replace("https://","")) ~ "}") if profile.linkedin_url,
-  ("\\faGithub\\hspace{1pt}\\href{" ~ profile.github_url ~ "}{" ~ (profile.github_url | replace("https://","")) ~ "}") if profile.github_url,
-  ("\\faGlobe\\hspace{1pt}\\href{" ~ profile.website_url ~ "}{" ~ (profile.website_url | replace("https://","")) ~ "}") if profile.website_url
+  (profile.location)                                                                                         if profile.location,
+  (profile.phone)                                                                                            if profile.phone,
+  ("\\href{mailto:" ~ profile.email ~ "}{" ~ profile.email ~ "}")                                           if profile.email,
+  ("\\href{" ~ profile.linkedin_url ~ "}{" ~ (profile.linkedin_url | replace("https://www.","") | replace("https://","")) ~ "}") if profile.linkedin_url,
+  ("\\href{" ~ profile.github_url ~ "}{" ~ (profile.github_url | replace("https://","")) ~ "}")             if profile.github_url,
+  ("\\href{" ~ profile.website_url ~ "}{" ~ (profile.website_url | replace("https://","")) ~ "}")           if profile.website_url
 ] | select | join("~~\\textcolor{accent}{$\\cdot$}~~") ))
 \end{center}
 
@@ -51,7 +47,7 @@
 % ── Summary ───────────────────────────────────────────────────────────────────
 ((* if tailored_summary *))
 \section*{Summary}
-{\small \color{accent} (( tailored_summary ))}
+{\small (( tailored_summary ))}
 ((* endif *))
 
 % ── Technical Skills — ALL skills, not just matched ───────────────────────────
@@ -81,7 +77,7 @@
 ((* endfor *))
 ((* endif *))
 
-% ── Technical Projects — relevant first, keywords woven into bullets ───────────
+% ── Technical Projects ────────────────────────────────────────────────────────
 ((* if projects *))
 \section*{Technical Projects}
 ((* set relevant = projects | selectattr("bullets") | list *))

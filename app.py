@@ -71,7 +71,7 @@ async def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user
 
-@app.get("/")
+@app.get("/health")
 async def health_check():
     return {
         "status": "online",
