@@ -42,6 +42,7 @@ test_suite_analysis/
 output/
 dist/
 build/
+screenshots/
 *.egg-info/
 
 # OS
