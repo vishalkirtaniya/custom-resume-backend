@@ -96,7 +96,7 @@ certifications (id, user_id → profiles, name, issuer, issue_date, expiry_date,
 
 ### Generation (Bearer token required)
 | Method | Endpoint | Description |
-|---|---|---|---|
+|---|---|---|
 | POST | `/generate` | Match skills, generate LaTeX resume |
 | POST | `/compile-pdf` | Compile `.tex` string to PDF |
 | GET | `/health` | Health check |
